@@ -35,3 +35,6 @@ Thumbs.db
 # Datasets and generated data
 datasets/*
 !datasets/.gitkeep
+
+# NotesWhileLearning
+scripts/notes.md
