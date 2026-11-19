@@ -38,3 +38,6 @@ datasets/*
 
 # NotesWhileLearning
 scripts/notes.md
+
+# Generated SQLite database
+data_pipeline/output/*.db
