@@ -20,9 +20,29 @@ def test_normalise_region_abbreviation():
     assert result == "East"
 
 
+def test_normalise_region_mixed_case():
+    assert normalise_region("sOuTh") == "South"
+
+
 def test_parse_amount():
     result = parse_amount("₹12,345.60")
     assert result == 12345.60
+
+
+def test_parse_amount_numeric_integer():
+    assert parse_amount(1500) == 1500
+
+
+def test_parse_amount_numeric_float():
+    assert parse_amount(1250.75) == 1250.75
+
+
+def test_parse_amount_missing_value():
+    assert pd.isna(parse_amount(None))
+
+
+def test_parse_amount_invalid_text():
+    assert pd.isna(parse_amount("not-a-number"))
 
 
 def test_parse_date():
@@ -30,9 +50,28 @@ def test_parse_date():
     assert result == pd.Timestamp("2026-07-15")
 
 
+def test_parse_date_iso_format():
+    assert parse_date("2026-07-15") == pd.Timestamp("2026-07-15")
+
+
+def test_parse_date_month_name_format():
+    assert parse_date("15-Jul-26") == pd.Timestamp("2026-07-15")
+
+
+def test_parse_date_invalid_input():
+    assert pd.isna(parse_date("not-a-date"))
+
+
+def test_parse_date_missing_value():
+    assert pd.isna(parse_date(None))
+
+
 def test_remove_duplicate_invoices():
     df = pd.DataFrame(
-        {"Invoice No": ["INV001", "INV001", "INV002"], "Qty": [10, 10, 20]}
+        {
+            "Invoice No": ["INV001", "INV001", "INV002"],
+            "Qty": [10, 10, 20],
+        }
     )
 
     result = remove_duplicate_invoices(df)
@@ -40,6 +79,20 @@ def test_remove_duplicate_invoices():
     assert len(result) == 2
     assert result["Invoice No"].is_unique
     assert result.iloc[0]["Qty"] == 10
+
+
+def test_remove_duplicate_invoices_without_duplicates():
+    df = pd.DataFrame(
+        {
+            "Invoice No": ["INV001", "INV002", "INV003"],
+            "Qty": [10, 20, 30],
+        }
+    )
+
+    result = remove_duplicate_invoices(df)
+
+    assert len(result) == 3
+    assert result["Invoice No"].is_unique
 
 
 def test_remove_test_distributors():
@@ -54,6 +107,19 @@ def test_remove_test_distributors():
 
     assert len(result) == 2
     assert "D999" not in result["Dist Code"].values
+
+
+def test_remove_test_distributors_without_test_rows():
+    df = pd.DataFrame(
+        {
+            "Invoice No": ["INV001", "INV002"],
+            "Dist Code": ["D001", "D002"],
+        }
+    )
+
+    result = remove_test_distributors(df)
+
+    assert len(result) == 2
 
 
 def test_split_rejects():
@@ -86,3 +152,45 @@ def test_split_rejects():
 
     assert "CN001" in clean_df["Invoice No"].values
     assert "INV005" in clean_df["Invoice No"].values
+
+
+def test_split_rejects_multiple_invalid_conditions():
+    df = pd.DataFrame(
+        {
+            "Invoice No": ["INV001", "INV002"],
+            "Qty": [None, -5],
+            "Net Value (INR)": [None, -500],
+        }
+    )
+
+    rejects_df, clean_df = split_rejects(df)
+
+    assert len(rejects_df) == 2
+    assert clean_df.empty
+    assert rejects_df["reason"].notna().all()
+
+
+def test_split_rejects_empty_dataframe():
+    df = pd.DataFrame(columns=["Invoice No", "Qty", "Net Value (INR)"])
+
+    rejects_df, clean_df = split_rejects(df)
+
+    assert rejects_df.empty
+    assert clean_df.empty
+
+
+def test_split_rejects_retains_valid_credit_note():
+    df = pd.DataFrame(
+        {
+            "Invoice No": ["CN001"],
+            "Qty": [-5],
+            "Net Value (INR)": [-500],
+        }
+    )
+
+    rejects_df, clean_df = split_rejects(df)
+
+    assert rejects_df.empty
+    assert len(clean_df) == 1
+    assert clean_df.iloc[0]["Qty"] == -5
+    assert clean_df.iloc[0]["Net Value (INR)"] == -500

@@ -41,13 +41,17 @@ def parse_date(date_value):
 
     text = str(date_value).strip().split()[0]
 
-    if "/" in text:
-        return pd.to_datetime(text, format="%d/%m/%Y")
+    try:
+        if "/" in text:
+            return pd.to_datetime(text, format="%d/%m/%Y", errors="coerce")
 
-    if any(ch.isalpha() for ch in text):
-        return pd.to_datetime(text, format="%d-%b-%y")
+        if "-" in text and any(month.isalpha() for month in text.split("-")):
+            return pd.to_datetime(text, format="%d-%b-%y", errors="coerce")
 
-    return pd.to_datetime(text, format="%Y-%m-%d")
+        return pd.to_datetime(text, format="%Y-%m-%d", errors="coerce")
+
+    except (ValueError, TypeError):
+        return pd.NaT
 
 
 def normalise_sku(sku_code):
