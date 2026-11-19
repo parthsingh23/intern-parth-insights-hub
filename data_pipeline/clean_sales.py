@@ -1,3 +1,4 @@
+from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
@@ -32,7 +33,21 @@ def parse_amount(net_value):
 
 
 def parse_date(date_value):
-    return pd.to_datetime(date_value, format="mixed", dayfirst=True, errors="coerce")
+    if pd.isna(date_value):
+        return pd.NaT
+
+    if isinstance(date_value, (pd.Timestamp, datetime)):
+        return pd.Timestamp(date_value).normalize()
+
+    text = str(date_value).strip().split()[0]
+
+    if "/" in text:
+        return pd.to_datetime(text, format="%d/%m/%Y")
+
+    if any(ch.isalpha() for ch in text):
+        return pd.to_datetime(text, format="%d-%b-%y")
+
+    return pd.to_datetime(text, format="%Y-%m-%d")
 
 
 def normalise_sku(sku_code):
