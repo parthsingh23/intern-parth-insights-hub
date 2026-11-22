@@ -415,7 +415,7 @@ The implementation includes:
 3. Filtering and paginating sales records through API endpoints.
 4. Aggregating sales data by business dimensions.
 5. Master-data endpoints for regions, brands, SKUs, and distributors.
-6. Request validation and standardized error responses using Pydantic and FastAPI.
+6. Request validation and standardised error responses using Pydantic and FastAPI.
 7. Automated API testing using pytest and FastAPI TestClient.
 8. API documentation through OpenAPI and HTTP request examples.
 
@@ -692,3 +692,191 @@ Valid credit-note records are retained in the dataset. Negative quantities and n
 | `docs/api-examples.http` | HTTP requests for testing API endpoints |
 
 ---
+
+# Development and Testing
+
+The project uses automated tests and code-quality tools to maintain consistency and catch errors early.
+
+## Python Tests
+
+**Framework:** pytest
+
+Run all Python tests:
+
+```bash
+pytest -v
+```
+
+Run tests for a specific module:
+
+```bash
+pytest backend/warmup/test_utils.py -v
+```
+
+Current Python test coverage includes:
+
+| Function | What is tested |
+|---|---|
+| `fiscal_year()` | Indian financial year calculation |
+| `format_inr()` | Indian currency formatting |
+| `parse_pack_size()` | Pack-size parsing and unit extraction |
+| Data cleaning functions | Region, amount, date, duplicate, test-row, and rejection handling |
+
+## Python Code Quality
+
+**Tools:** Ruff and Black
+
+Check Python code for linting issues:
+
+```bash
+ruff check .
+```
+
+Check Python formatting without modifying files:
+
+```bash
+black --check .
+```
+
+## Frontend Tests
+
+**Framework:** Vitest
+
+Navigate to the frontend directory:
+
+```bash
+cd frontend
+```
+
+Run frontend tests:
+
+```bash
+npm test
+```
+
+Current frontend tests cover the `formatInr()` utility, including Indian number grouping, decimal formatting, zero values, and different number sizes.
+
+## Frontend Code Quality
+
+**Tools:** ESLint, Prettier, and TypeScript
+
+Run ESLint:
+
+```bash
+npm run lint
+```
+
+Check formatting:
+
+```bash
+npm run format:check
+```
+
+Run the TypeScript type checker:
+
+```bash
+npx tsc --noEmit
+```
+
+Return to the repository root:
+
+```bash
+cd ..
+```
+
+## Run All Pre-commit Checks
+
+To execute every configured pre-commit hook manually:
+
+```bash
+pre-commit run --all-files
+```
+
+Configured hooks:
+
+| Tool | Purpose |
+|---|---|
+| Ruff | Python linting |
+| Black | Python formatting |
+| ESLint | Frontend linting |
+| Prettier | Frontend formatting |
+
+---
+
+# Quick Validation Checklist
+
+After setting up the repository, run the following commands from the project root.
+
+### Environment and Python
+
+```bash
+# Environment
+bash scripts/check_env.sh
+
+# Python tests
+pytest -v
+
+# Python quality checks
+ruff check .
+black --check .
+```
+
+### Week 2 Data Pipeline
+
+```bash
+# Clean the raw dataset
+python data_pipeline/clean_sales.py
+
+# Load cleaned data into SQLite
+python data_pipeline/load_sqlite.py
+
+# Execute SQL queries
+python data_pipeline/run_queries.py
+
+# Run data pipeline tests
+pytest data_pipeline/ -v
+```
+
+### Frontend
+
+```bash
+cd frontend
+
+npm test
+npm run lint
+npm run format:check
+npx tsc --noEmit
+
+cd ..
+```
+
+### Pre-commit
+
+```bash
+pre-commit run --all-files
+```
+
+A successful run confirms that the required environment checks, automated tests, data pipeline operations, and configured code-quality checks pass.
+
+---
+
+# Branching and Commit Conventions
+
+## Branch Structure
+
+- `main`: Stable integration branch.
+- `dev`: Development and review branch.
+- `prod`: Production branch.
+- Assignment-specific branches: Created from `dev` for individual assignments.
+
+Example:
+
+```text
+main
+└── dev
+    ├── week2-secondary-sales
+    └── week3-sales-api
+```
+
+Assignment-specific branches should be created from `dev`. Once the work is complete and reviewed, they can be merged back into `dev`.
+
