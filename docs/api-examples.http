@@ -1,0 +1,150 @@
+
+@baseUrl = http://127.0.0.1:8000
+
+### Health check
+
+GET {{baseUrl}}/health
+
+
+### Sales records
+
+# Default pagination
+GET {{baseUrl}}/sales
+
+###
+
+# Custom pagination
+GET {{baseUrl}}/sales?page=1&page_size=10
+
+###
+
+# Filter by region
+GET {{baseUrl}}/sales?region=East
+
+###
+
+# Filter by state
+GET {{baseUrl}}/sales?state=West Bengal
+
+###
+
+# Filter by brand
+GET {{baseUrl}}/sales?brand=Navratna
+
+###
+
+# Filter by channel
+GET {{baseUrl}}/sales?channel=General%20Trade
+
+###
+
+# Filter by SKU
+GET {{baseUrl}}/sales?sku_code=SKU001
+
+###
+
+# Filter by date range
+GET {{baseUrl}}/sales?date_from=2025-12-01&date_to=2025-12-31
+
+###
+
+# Filter by return status
+GET {{baseUrl}}/sales?is_return=true
+
+###
+
+# Combined filters
+GET {{baseUrl}}/sales?region=East&brand=Navratna&is_return=false&page=1&page_size=20
+
+###
+
+# September 2026 acceptance test
+GET {{baseUrl}}/sales?is_return=false&date_from=2026-09-01&date_to=2026-09-30&page_size=1
+
+
+### Sales summary
+
+# Overall summary
+GET {{baseUrl}}/sales/summary
+
+###
+
+# Group by region
+GET {{baseUrl}}/sales/summary?group_by=region
+
+###
+
+# Group by state
+GET {{baseUrl}}/sales/summary?group_by=state
+
+###
+
+# Group by brand
+GET {{baseUrl}}/sales/summary?group_by=brand
+
+###
+
+# Group by SKU
+GET {{baseUrl}}/sales/summary?group_by=sku
+
+###
+
+# Group by channel
+GET {{baseUrl}}/sales/summary?group_by=channel
+
+###
+
+# Group by month
+GET {{baseUrl}}/sales/summary?group_by=month
+
+###
+
+# Navratna December 2025 acceptance test
+GET {{baseUrl}}/sales/summary?brand=Navratna&date_from=2025-12-01&date_to=2025-12-31
+
+
+### Master data
+
+# Regions
+GET {{baseUrl}}/regions
+
+###
+
+# Brands
+GET {{baseUrl}}/brands
+
+###
+
+# SKUs
+GET {{baseUrl}}/skus
+
+###
+
+# Distributors
+GET {{baseUrl}}/distributors
+
+
+### Validation and error handling
+
+# Invalid page size: expected 422
+GET {{baseUrl}}/sales?page_size=500
+
+###
+
+# Invalid date: expected 422
+GET {{baseUrl}}/sales?date_from=2025-13-01
+
+###
+
+# Invalid region: expected 422
+GET {{baseUrl}}/sales?region=Mars
+
+###
+
+# Unknown SKU: expected 404
+GET {{baseUrl}}/sales?sku_code=UNKNOWN
+
+###
+
+# Invalid grouping: expected 422
+GET {{baseUrl}}/sales/summary?group_by=invalid

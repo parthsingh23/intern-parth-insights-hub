@@ -400,185 +400,295 @@ The following documents record the profiling, cleaning, and analysis work:
 
 ---
 
-# Development and Testing
+# Week 3: Sales Analytics REST API
 
-The project uses automated tests and code-quality tools to maintain consistency and catch errors early.
+## Overview
 
-## Python Tests
+Week 3 focuses on developing a REST API for the cleaned secondary sales dataset using FastAPI.
 
-**Framework:** pytest
+The objective is to expose cleaned sales records and analytical summaries through structured HTTP endpoints using a modular backend architecture.
 
-Run all Python tests:
+The implementation includes:
 
-```bash
-pytest -v
-```
+1. A modular application structure separating routers, services, repositories, and schemas.
+2. Loading the cleaned sales CSV into memory once during application startup.
+3. Filtering and paginating sales records through API endpoints.
+4. Aggregating sales data by business dimensions.
+5. Master-data endpoints for regions, brands, SKUs, and distributors.
+6. Request validation and standardized error responses using Pydantic and FastAPI.
+7. Automated API testing using pytest and FastAPI TestClient.
+8. API documentation through OpenAPI and HTTP request examples.
 
-Run tests for a specific module:
+## Backend Architecture
 
-```bash
-pytest backend/warmup/test_utils.py -v
-```
-
-Current Python test coverage includes:
-
-| Function | What is tested |
-|---|---|
-| `fiscal_year()` | Indian financial year calculation |
-| `format_inr()` | Indian currency formatting |
-| `parse_pack_size()` | Pack-size parsing and unit extraction |
-| Data cleaning functions | Region, amount, date, duplicate, test-row, and rejection handling |
-
-## Python Code Quality
-
-**Tools:** Ruff and Black
-
-Check Python code for linting issues:
-
-```bash
-ruff check .
-```
-
-Check Python formatting without modifying files:
-
-```bash
-black --check .
-```
-
-## Frontend Tests
-
-**Framework:** Vitest
-
-Navigate to the frontend directory:
-
-```bash
-cd frontend
-```
-
-Run frontend tests:
-
-```bash
-npm test
-```
-
-Current frontend tests cover the `formatInr()` utility, including Indian number grouping, decimal formatting, zero values, and different number sizes.
-
-## Frontend Code Quality
-
-**Tools:** ESLint, Prettier, and TypeScript
-
-Run ESLint:
-
-```bash
-npm run lint
-```
-
-Check formatting:
-
-```bash
-npm run format:check
-```
-
-Run the TypeScript type checker:
-
-```bash
-npx tsc --noEmit
-```
-
-Return to the repository root:
-
-```bash
-cd ..
-```
-
-## Run All Pre-commit Checks
-
-To execute every configured pre-commit hook manually:
-
-```bash
-pre-commit run --all-files
-```
-
-Configured hooks:
-
-| Tool | Purpose |
-|---|---|
-| Ruff | Python linting |
-| Black | Python formatting |
-| ESLint | Frontend linting |
-| Prettier | Frontend formatting |
-
----
-
-# Quick Validation Checklist
-
-After setting up the repository, run the following commands from the project root.
-
-### Environment and Python
-
-```bash
-# Environment
-bash scripts/check_env.sh
-
-# Python tests
-pytest -v
-
-# Python quality checks
-ruff check .
-black --check .
-```
-
-### Week 2 Data Pipeline
-
-```bash
-# Clean the raw dataset
-python data_pipeline/clean_sales.py
-
-# Load cleaned data into SQLite
-python data_pipeline/load_sqlite.py
-
-# Execute SQL queries
-python data_pipeline/run_queries.py
-
-# Run data pipeline tests
-pytest data_pipeline/ -v
-```
-
-### Frontend
-
-```bash
-cd frontend
-
-npm test
-npm run lint
-npm run format:check
-npx tsc --noEmit
-
-cd ..
-```
-
-### Pre-commit
-
-```bash
-pre-commit run --all-files
-```
-
-A successful run confirms that the required environment checks, automated tests, data pipeline operations, and configured code-quality checks pass.
-
----
-
-# Branching and Commit Conventions
-
-## Branch Structure
-
-- `main`: Stable integration branch.
-- `dev`: Development and review branch.
-- `prod`: Production branch.
-- Assignment-specific branches: Created from `dev` for individual assignments.
-
-Example:
+The API is implemented in `backend/app/`.
 
 ```text
-main
-└── dev
-     ├──
+backend/
+├── app/
+│   ├── repositories/
+│   │   └── sales_repository.py
+│   ├── routers/
+│   │   ├── health.py
+│   │   └── sales.py
+│   ├── schemas/
+│   │   └── sales.py
+│   ├── services/
+│   │   └── sales_service.py
+│   ├── config.py
+│   └── main.py
+└── tests/
+    ├── test_health.py
+    └── test_sales_api.py
+```
+
+### Architecture Responsibilities
+
+| Component | Responsibility |
+|---|---|
+| `main.py` | Creates the FastAPI application, configures middleware, exception handlers, and application lifespan |
+| `config.py` | Defines application configuration and dataset paths |
+| `repositories/` | Loads and accesses the cleaned sales dataset |
+| `services/` | Implements application-level business logic |
+| `routers/` | Defines HTTP endpoints and delegates operations to services |
+| `schemas/` | Defines request validation and response models using Pydantic |
+| `backend/tests/` | Contains automated API tests |
+
+The `SalesRepository` loads the cleaned CSV once during application startup. Routers do not directly access Pandas or perform data processing.
+
+## API Endpoints
+
+The API exposes the following endpoints:
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/health` | Checks API health |
+| GET | `/sales` | Retrieves filtered and paginated sales records |
+| GET | `/sales/summary` | Returns aggregate sales metrics |
+| GET | `/regions` | Returns available regions |
+| GET | `/brands` | Returns available brands |
+| GET | `/skus` | Returns available SKU master data |
+| GET | `/distributors` | Returns available distributor master data |
+
+### Sales Filtering and Pagination
+
+The `/sales` endpoint supports filtering by:
+
+- Region
+- State
+- Brand
+- SKU code
+- Channel
+- Invoice date range
+- Return status
+
+Pagination parameters:
+
+| Parameter | Default | Constraint |
+|---|---:|---|
+| `page` | 1 | Minimum 1 |
+| `page_size` | 50 | Minimum 1, maximum 200 |
+
+The response includes the requested records and pagination metadata:
+
+- `items`
+- `page`
+- `page_size`
+- `total`
+
+### Sales Summary
+
+The `/sales/summary` endpoint calculates:
+
+- `net_value`
+- `quantity`
+- `row_count`
+
+Optional grouping dimensions:
+
+- `region`
+- `state`
+- `brand`
+- `sku`
+- `channel`
+- `month`
+
+The date filters use inclusive start and end dates.
+
+## Running the API
+
+### 1. Set Up the Environment
+
+From the repository root, activate the virtual environment:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Install the project dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+### 2. Start the Development Server
+
+Run either command, depending on your current working directory.
+
+**From the repository root:**
+
+```powershell
+uvicorn backend.app.main:app --reload
+```
+
+**From the `backend` directory:**
+
+```powershell
+cd backend
+uvicorn app.main:app --reload
+```
+
+The API is available at:
+
+```text
+http://127.0.0.1:8000
+```
+
+Interactive API documentation:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+OpenAPI specification:
+
+```text
+docs/openapi.json
+```
+
+HTTP request examples:
+
+```text
+docs/api-examples.http
+```
+
+### CORS Configuration
+
+The API allows the following frontend origin:
+
+```text
+http://localhost:3000
+```
+
+## Error Handling
+
+API errors use a consistent JSON structure:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid request parameters"
+  }
+}
+```
+
+The API handles invalid query parameters, unsupported filter values, and unknown SKU codes through appropriate HTTP status codes.
+
+| Scenario | HTTP Status |
+|---|---:|
+| Invalid query parameters | 422 |
+| Unknown SKU code | 404 |
+
+## Automated API Testing
+
+API tests are implemented using pytest and FastAPI TestClient.
+
+Test location:
+
+```text
+backend/tests/
+```
+
+The tests cover:
+
+- Health endpoint.
+- Sales retrieval and pagination.
+- Region, brand, date, and return filters.
+- Sales summaries and grouping.
+- Master-data endpoints.
+- Invalid query parameters.
+- Unknown SKU codes.
+- CORS configuration.
+
+Run the API tests:
+
+```powershell
+pytest backend/tests/ -v
+```
+
+Run the complete Python test suite:
+
+```powershell
+pytest -v
+```
+
+### Code Quality Checks
+
+Run Ruff:
+
+```powershell
+ruff check .
+```
+
+Check code formatting with Black:
+
+```powershell
+black --check .
+```
+
+## Data Validation and Acceptance Checks
+
+The API uses the cleaned Week 2 dataset:
+
+```text
+data_pipeline/output/clean_sales.csv
+```
+
+Expected dataset-level values:
+
+| Metric | Expected Result |
+|---|---:|
+| Total records | 5,418 |
+| Total net value | ₹60,984,552.24 |
+| Total quantity | 568,254 |
+
+### Expected Regional Net Sales
+
+| Region | Net Value (INR) |
+|---|---:|
+| East | 11,979,450.64 |
+| North | 14,621,494.11 |
+| South | 15,657,120.63 |
+| West | 18,726,486.86 |
+
+### Additional Acceptance Checks
+
+| Test | Expected Result |
+|---|---:|
+| Navratna sales, December 2025 | ₹462,440.22 |
+| Non-return records, September 2026 | 298 |
+| Maximum page size | 200 |
+| Invalid page size of 500 | HTTP 422 |
+| Unknown SKU code | HTTP 404 |
+
+Valid credit-note records are retained in the dataset. Negative quantities and net values are not discarded because they represent returns.
+
+## Week 3 Documentation
+
+| File | Description |
+|---|---|
+| `docs/openapi.json` | Generated OpenAPI specification |
+| `docs/api-examples.http` | HTTP requests for testing API endpoints |
+
+---
