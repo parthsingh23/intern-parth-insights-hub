@@ -1,0 +1,797 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Emami Sales Analytics API",
+    "description": "API for querying and analysing secondary sales data.",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "Health"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Health Check Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sales": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Get sales records",
+        "description": "Retrieve sales records with optional filters and pagination. The maximum page size is 200.",
+        "operationId": "get_sales_sales_get",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Region"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Brand"
+            }
+          },
+          {
+            "name": "sku_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sku Code"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Channel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "is_return",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Return"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The supplied SKU code does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sales/summary": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "Get sales summary",
+        "description": "Calculate sales totals using optional filters. Results can optionally be grouped by region, state, brand, SKU, channel, or month.",
+        "operationId": "get_sales_summary_sales_summary_get",
+        "parameters": [
+          {
+            "name": "region",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Region"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Region"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "name": "brand",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Brand"
+            }
+          },
+          {
+            "name": "sku_code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sku Code"
+            }
+          },
+          {
+            "name": "channel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Channel"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Channel"
+            }
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date From"
+            }
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date To"
+            }
+          },
+          {
+            "name": "is_return",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Return"
+            }
+          },
+          {
+            "name": "group_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/GroupBy"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Group By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SalesSummary"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The supplied SKU code does not exist.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid query parameters.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/regions": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "List regions",
+        "description": "Return all distinct sales regions.",
+        "operationId": "get_regions_regions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Regions Regions Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/brands": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "List brands",
+        "description": "Return all distinct brands in the sales dataset.",
+        "operationId": "get_brands_brands_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Brands Brands Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/skus": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "List SKUs",
+        "description": "Return distinct SKU codes and their corresponding names.",
+        "operationId": "get_skus_skus_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SKUItem"
+                  },
+                  "type": "array",
+                  "title": "Response Get Skus Skus Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/distributors": {
+      "get": {
+        "tags": [
+          "Sales"
+        ],
+        "summary": "List distributors",
+        "description": "Return distinct distributor codes and their corresponding names.",
+        "operationId": "get_distributors_distributors_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/DistributorItem"
+                  },
+                  "type": "array",
+                  "title": "Response Get Distributors Distributors Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Channel": {
+        "type": "string",
+        "enum": [
+          "General Trade",
+          "Chemist",
+          "Modern Trade"
+        ],
+        "title": "Channel"
+      },
+      "DistributorItem": {
+        "properties": {
+          "Dist Code": {
+            "type": "string",
+            "title": "Dist Code"
+          },
+          "Distributor Name": {
+            "type": "string",
+            "title": "Distributor Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "Dist Code",
+          "Distributor Name"
+        ],
+        "title": "DistributorItem"
+      },
+      "ErrorDetail": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorDetail"
+      },
+      "ErrorResponse": {
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorDetail"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse"
+      },
+      "GroupBy": {
+        "type": "string",
+        "enum": [
+          "region",
+          "state",
+          "brand",
+          "sku",
+          "channel",
+          "month"
+        ],
+        "title": "GroupBy"
+      },
+      "Region": {
+        "type": "string",
+        "enum": [
+          "North",
+          "South",
+          "East",
+          "West"
+        ],
+        "title": "Region"
+      },
+      "SKUItem": {
+        "properties": {
+          "SKU Code": {
+            "type": "string",
+            "title": "Sku Code"
+          },
+          "SKU Name": {
+            "type": "string",
+            "title": "Sku Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "SKU Code",
+          "SKU Name"
+        ],
+        "title": "SKUItem"
+      },
+      "SalesItem": {
+        "properties": {
+          "Invoice No": {
+            "type": "string",
+            "title": "Invoice No"
+          },
+          "Invoice Date": {
+            "type": "string",
+            "format": "date",
+            "title": "Invoice Date"
+          },
+          "Region": {
+            "type": "string",
+            "title": "Region"
+          },
+          "State": {
+            "type": "string",
+            "title": "State"
+          },
+          "Dist Code": {
+            "type": "string",
+            "title": "Dist Code"
+          },
+          "Distributor Name": {
+            "type": "string",
+            "title": "Distributor Name"
+          },
+          "SKU Code": {
+            "type": "string",
+            "title": "Sku Code"
+          },
+          "SKU Name": {
+            "type": "string",
+            "title": "Sku Name"
+          },
+          "Brand": {
+            "type": "string",
+            "title": "Brand"
+          },
+          "Channel": {
+            "type": "string",
+            "title": "Channel"
+          },
+          "Qty": {
+            "type": "number",
+            "title": "Qty"
+          },
+          "Net Value (INR)": {
+            "type": "number",
+            "title": "Net Value (Inr)"
+          },
+          "is_return": {
+            "type": "boolean",
+            "title": "Is Return"
+          }
+        },
+        "type": "object",
+        "required": [
+          "Invoice No",
+          "Invoice Date",
+          "Region",
+          "State",
+          "Dist Code",
+          "Distributor Name",
+          "SKU Code",
+          "SKU Name",
+          "Brand",
+          "Channel",
+          "Qty",
+          "Net Value (INR)",
+          "is_return"
+        ],
+        "title": "SalesItem"
+      },
+      "SalesResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SalesItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "page": {
+            "type": "integer",
+            "title": "Page"
+          },
+          "page_size": {
+            "type": "integer",
+            "title": "Page Size"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "page",
+          "page_size",
+          "total"
+        ],
+        "title": "SalesResponse"
+      },
+      "SalesSummary": {
+        "properties": {
+          "net_value": {
+            "type": "number",
+            "title": "Net Value"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          },
+          "groups": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/SalesSummaryGroup"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Groups"
+          }
+        },
+        "type": "object",
+        "required": [
+          "net_value",
+          "quantity",
+          "row_count"
+        ],
+        "title": "SalesSummary"
+      },
+      "SalesSummaryGroup": {
+        "properties": {
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "net_value": {
+            "type": "number",
+            "title": "Net Value"
+          },
+          "quantity": {
+            "type": "number",
+            "title": "Quantity"
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "group",
+          "net_value",
+          "quantity",
+          "row_count"
+        ],
+        "title": "SalesSummaryGroup"
+      }
+    }
+  }
+}
