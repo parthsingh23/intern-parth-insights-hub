@@ -38,8 +38,11 @@ GET {{baseUrl}}/sales?channel=General%20Trade
 
 ###
 
-# Filter by SKU
-GET {{baseUrl}}/sales?sku_code=SKU001
+# Filter by SKU (Navratna Cool Oil 100 ml)
+GET {{baseUrl}}/sales?sku_code=EM-1001
+
+# Filter by SKU (Kesh King Ayurvedic Oil 100 ml)
+GET {{baseUrl}}/sales?sku_code=EM-1006
 
 ###
 
