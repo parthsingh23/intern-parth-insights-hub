@@ -36,6 +36,11 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def read_root():
+    return {"message": "Backend for the insights hub"}
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request,
