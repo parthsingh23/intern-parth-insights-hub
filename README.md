@@ -880,3 +880,210 @@ main
 
 Assignment-specific branches should be created from `dev`. Once the work is complete and reviewed, they can be merged back into `dev`.
 
+---
+
+# Week 4: PostgreSQL Database Integration
+
+## Overview
+
+Week 4 migrates the sales analytics backend from an in-memory CSV repository to a relational PostgreSQL database while preserving the existing API contract.
+
+The implementation includes:
+
+1. Relational database schema for regions, states, distributors, brands, SKUs, and sales.
+2. SQLAlchemy ORM models and Alembic database migrations.
+3. Idempotent loading of master data and cleaned sales records from the supplied datasets.
+4. Database constraints for referential integrity and return quantities.
+5. Indexes for invoice date, distributor ID, and SKU ID.
+6. A denormalized sales view for analytical queries.
+7. A PostgreSQL repository implementing the existing sales repository interface.
+8. Automated API and database constraint tests.
+
+## Database Architecture
+
+The database contains six tables:
+
+| Table | Purpose |
+|---|---|
+| `regions` | Stores sales regions |
+| `states` | Stores states and their associated regions |
+| `distributors` | Stores distributor master data |
+| `brands` | Stores product brands |
+| `skus` | Stores SKU master data |
+| `sales` | Stores individual sales transaction lines |
+
+The entity relationship diagram is maintained in `docs/erd.md`.
+
+The database uses foreign keys to enforce relationships between master records and sales transactions.
+
+The sales table also enforces the following business rule:
+
+- Return transactions must have negative quantities.
+- Normal sales transactions must have positive quantities.
+
+## Database Configuration
+
+Database connection settings are maintained in the root `.env` file.
+
+The example configuration is provided in `.env.example`.
+
+The application supports two repository backends:
+
+| Configuration | Backend |
+|---|---|
+| `REPOSITORY=file` | Cleaned CSV repository |
+| `REPOSITORY=postgres` | PostgreSQL repository |
+
+The default repository is `file`.
+
+For PostgreSQL integration, configure `REPOSITORY=postgres` in `.env`.
+
+The actual `.env` file contains local credentials and must not be committed to Git.
+
+## Database Migrations
+
+Alembic manages database schema changes.
+
+The migrations include:
+
+| Migration | Description |
+|---|---|
+| `0001_initial_schema` | Creates the six relational tables and their constraints |
+| `0002_add_indexes` | Creates indexes for invoice date, distributor ID, and SKU ID |
+| `0003_create_sales_denorm_view` | Creates the denormalized sales view |
+
+Run migrations:
+
+```powershell
+alembic upgrade head
+```
+
+Check the current migration:
+
+```powershell
+alembic current
+```
+
+To recreate the schema from scratch:
+
+```powershell
+alembic downgrade base
+alembic upgrade head
+```
+
+## Data Seeding
+
+The seed script is located at:
+
+```text
+scripts/seed_db.py
+```
+
+It loads the five master-data sheets from the supplied workbook and imports cleaned sales records from:
+
+```text
+data_pipeline/output/clean_sales.csv
+```
+
+Distributor codes and SKU codes are resolved to their corresponding database IDs before sales records are inserted.
+
+Run:
+
+```powershell
+python scripts/seed_db.py
+```
+
+The seed operation is designed to be idempotent. Repeated execution produces the same final record counts rather than accumulating duplicate sales rows.
+
+### Expected Data Validation Results
+
+| Table | Expected records |
+|---|---:|
+| Regions | 4 |
+| States | 12 |
+| Distributors | 24 |
+| Brands | 8 |
+| SKUs | 23 |
+| Sales | 5,418 |
+
+Additional validation:
+
+| Metric | Expected result |
+|---|---:|
+| Total net value | ₹60,984,552.24 |
+| Return records | 78 |
+
+## Denormalized Sales View
+
+The database provides a view named:
+
+```sql
+v_sales_denorm
+```
+
+It joins sales transactions with distributors, states, regions, SKUs, and brands.
+
+The view exposes the column names expected by the existing sales analytics application, allowing the PostgreSQL repository to provide the same DataFrame structure as the CSV repository.
+
+## Index Performance Analysis
+
+The following indexes were added:
+
+- `idx_sales_invoice_date`
+- `idx_sales_distributor_id`
+- `idx_sales_sku_id`
+
+The invoice-date index was evaluated using `EXPLAIN ANALYZE`.
+
+The recorded execution time changed from 0.769 ms before indexing to 0.374 ms after indexing, an observed reduction of approximately 51.4%.
+
+Detailed measurements and query plans are documented in:
+
+```text
+docs/week04-explain.md
+```
+
+## PostgreSQL Repository Integration
+
+The PostgreSQL implementation is located at:
+
+```text
+backend/app/repositories/postgres_sales_repository.py
+```
+
+The application selects the repository during startup based on the `REPOSITORY` environment variable.
+
+The existing API routes and service layer remain compatible with both repository implementations.
+
+## Automated Testing
+
+Database constraint tests are maintained in:
+
+```text
+backend/tests/test_database_constraints.py
+```
+
+They verify that PostgreSQL rejects:
+
+- Return transactions with positive quantities.
+- Sales transactions referencing nonexistent SKU IDs.
+
+The existing Week 3 API tests are also executed against the PostgreSQL repository without modifying their assertions.
+
+Run the PostgreSQL-backed tests:
+
+```powershell
+$env:REPOSITORY = "postgres"
+python -m pytest backend/tests/ -v
+```
+
+Latest validation results:
+
+| Test configuration | Result |
+|---|---:|
+| File repository, existing Week 3 tests | 26 passed |
+| PostgreSQL repository, full backend suite | 28 passed |
+
+The PostgreSQL integration was developed and tested locally using PostgreSQL 18.7.
+
+**Environment note:** The assignment specifies PostgreSQL 16 with Docker Compose. Following mentor guidance, Docker Compose was not introduced because the project had already been developed and tested using a local PostgreSQL installation. The implementation was validated locally with PostgreSQL 18.7. Compatibility with PostgreSQL 16 has not been independently verified.
