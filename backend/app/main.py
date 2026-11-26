@@ -1,21 +1,35 @@
+import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from .repositories.postgres_sales_repository import PostgresSalesRepository
 from .repositories.sales_repository import SalesRepository
 from .routers.health import router as health_router
 from .routers.sales import router as sales_router
 from .services.sales_service import SalesService
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    repository = SalesRepository()
-    app.state.sales_service = SalesService(repository)
+    repository_type = os.getenv("REPOSITORY", "file").strip().lower()
 
+    if repository_type == "file":
+        repository = SalesRepository()
+    elif repository_type == "postgres":
+        repository = PostgresSalesRepository()
+    else:
+        raise ValueError(f"Unsupported REPOSITORY value: {repository_type}")
+
+    app.state.sales_service = SalesService(repository)
     yield
 
 
